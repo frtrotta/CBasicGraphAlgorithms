@@ -1,24 +1,32 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   main.c
- * Author: francesco
- *
- * Created on 4 aprile 2016, 10.47
- */
-
 #include <stdio.h>
 #include <stdlib.h>
+#include "graph.h"
 
-/*
- * 
- */
 int main(int argc, char** argv) {
-
+    graph *g = createGraph(8, 8);
+    
+    vertex *a = createVertex('A');
+    vertex *b = createVertex('B');
+    vertex *c = createVertex('C');    
+    vertex *d = createVertex('D');
+    vertex *e = createVertex('E');
+    addVertex(g, a);
+    addVertex(g, b);
+    addVertex(g, c);
+    addVertex(g, d);
+    addVertex(g, e);
+    addEdge(g, createEdge(a, b));
+    addEdge(g, createEdge(b, c));
+    addEdge(g, createEdge(a, c));
+    addEdge(g, createEdge(b, d));
+    addEdge(g, createEdge(d, c));
+    addEdge(g, createEdge(d, e));
+    
+    vertex *root = a;
+    unVisitGraph(g);
+    
+    DFS(g, root);
+    
     return (EXIT_SUCCESS);
 }
 

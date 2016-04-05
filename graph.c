@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "graph.h"
 
-vertex * createVertex(int key) {
+vertex * createVertex(char key) {
     vertex *r = (vertex *) malloc(sizeof (vertex));
     if (r) {
         r->key = key;
@@ -140,4 +140,54 @@ edge ** incidentEdges(graph *g, vertex *v) {
         r[j] = NULL;
     }
     return r;
+}
+
+void unVisitGraph(graph *g) {
+    vertex **v = vertices(g);
+    vertex **t = v;
+    while(*v) {
+        (*v++)->status = NOT_VISITED;
+    }
+    free(t);
+    
+    edge **e = edges(g);
+    edge **u = e;
+    while(*e) {
+        (*e++)->type = UNSET;
+    }
+    free(u);
+}
+
+int DFS(graph *g, vertex *v) {
+    printf("%c\n", v->key);
+    edge **ie = incidentEdges(g, v);
+    while(*ie) {
+        vertex *o = NULL;
+        switch((*ie)->type) {
+            case UNSET:
+                o = opposite(*ie, v);
+                switch(o->status) {
+                    case VISITED:
+                        (*ie)->type = BACK;
+                        break;
+                    case NOT_VISITED:
+                        (*ie)->type = DISCOVERY;
+                        o->status = VISITED;
+                        DFS(g, o);
+                        break;
+                    default:
+                        fprintf(stderr, "Unexpected vertex status %d", o->status);
+                        return -1;
+                }
+                break;
+            case DISCOVERY:
+            case BACK:
+                break;
+            default:
+                fprintf(stderr, "Unexpected edge type %d", (*ie)->type);
+                return -2;
+        }
+        ie++;
+    }
+        return 0;
 }

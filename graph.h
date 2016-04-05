@@ -11,7 +11,7 @@ extern "C" {
     };
     
     struct s_vertex {
-        int key;
+        char key;
         enum v_status status;
     };
     
@@ -43,7 +43,7 @@ extern "C" {
     
     typedef struct s_graph graph;
     
-    vertex * createVertex(int key);
+    vertex * createVertex(char key);
     edge * createEdge(vertex *v1, vertex *v2);
     graph * createGraph(int vertexListSize, int edgeListSize);
     
@@ -60,6 +60,10 @@ extern "C" {
     vertex ** adjacentVertices(graph *g, vertex *v);
     
     edge ** incidentEdges(graph *g, vertex *v);
+    
+    void unVisitGraph(graph *g);
+    
+    int DFS(graph *g, vertex *v);
 
 #ifdef __cplusplus
 }
