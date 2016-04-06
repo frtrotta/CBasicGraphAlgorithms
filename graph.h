@@ -67,6 +67,7 @@ extern "C" {
 
     struct s_treeNode {
         char key;
+        int level;
         struct s_treeNode **children;
         int childrenListSize;
         int childrenNum;
@@ -74,13 +75,13 @@ extern "C" {
 
     typedef struct s_treeNode treeNode;
 
-    treeNode * createNode(char key, int childrenListSize);
+    treeNode * createNode(char key, int level, int childrenListSize);
     int addChildren(treeNode *n, treeNode *child);
 
     //---------------------------------------------------------------
 
-    treeNode * DFS(graph *g, vertex *v);
-    void DFStree(treeNode *n);
+    treeNode * DFS(graph *g, vertex *v, int level);
+    void TreeDFSPrint(treeNode *n);
 
 #ifdef __cplusplus
 }

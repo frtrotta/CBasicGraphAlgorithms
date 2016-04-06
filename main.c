@@ -25,11 +25,11 @@ int main(int argc, char** argv) {
     vertex *root = a;
     unVisitGraph(g);
     
-    treeNode *DFSroot = DFS(g, root);
+    treeNode *DFSroot = DFS(g, root, 0);
     
     printf("\n");
     
-    DFStree(DFSroot);
+    TreeDFSPrint(DFSroot);
     
     return (EXIT_SUCCESS);
 }

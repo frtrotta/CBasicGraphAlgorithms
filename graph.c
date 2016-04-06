@@ -158,7 +158,7 @@ void unVisitGraph(graph *g) {
     free(u);
 }
 
-treeNode * createNode(char key, int childrenListSize) {
+treeNode * createNode(char key, int level, int childrenListSize) {
     treeNode *r = (treeNode *) malloc(sizeof (treeNode));
     if (r) {
         r->children = (treeNode **) malloc(childrenListSize * sizeof (treeNode *));
@@ -166,6 +166,7 @@ treeNode * createNode(char key, int childrenListSize) {
             r->childrenListSize = childrenListSize;
             r->childrenNum = 0;
             r->key = key;
+            r->level = level;
         } else {
             free(r);
         }
@@ -192,9 +193,9 @@ int addChildren(treeNode *n, treeNode *child) {
     return r;
 }
 
-treeNode * DFS(graph *g, vertex *v) {
+treeNode * DFS(graph *g, vertex *v, int level) {
     printf("%c ", v->key);
-    treeNode *r = createNode(v->key, 8);
+    treeNode *r = createNode(v->key, level, 8);
     if (r) {
         edge **ie = incidentEdges(g, v);
         while (*ie) {
@@ -209,11 +210,11 @@ treeNode * DFS(graph *g, vertex *v) {
                         case NOT_VISITED:
                             (*ie)->type = DISCOVERY;
                             o->status = VISITED;
-                            addChildren(r, DFS(g, o));
+                            addChildren(r, DFS(g, o, level+1));
                             break;
                         default:
                             fprintf(stderr, "Unexpected vertex status %d", o->status);
-                            return -1;
+                            return NULL;
                     }
                     break;
                 case DISCOVERY:
@@ -221,7 +222,7 @@ treeNode * DFS(graph *g, vertex *v) {
                     break;
                 default:
                     fprintf(stderr, "Unexpected edge type %d", (*ie)->type);
-                    return -2;
+                    return NULL;
             }
             ie++;
         }
@@ -229,10 +230,10 @@ treeNode * DFS(graph *g, vertex *v) {
     return r;
 }
 
-void DFStree(treeNode *n) {
-    printf("%c ", n->key);
+void TreeDFSPrint(treeNode *n) {
+    printf("%c (%d); ", n->key, n->level);
     int i=0;
     for(i=0; i<n->childrenNum; i++) {
-        DFStree(n->children[i]);
+        TreeDFSPrint(n->children[i]);
     }
 }
