@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include "graph.h"
+#include "queue.h"
 
 vertex * createVertex(char key) {
     vertex *r = (vertex *) malloc(sizeof (vertex));
@@ -11,11 +14,12 @@ vertex * createVertex(char key) {
     return r;
 }
 
-edge * createEdge(vertex *v1, vertex *v2) {
+edge * createEdge(vertex *v1, vertex *v2, char label[]) {
     edge *r = (edge *) malloc(sizeof (edge));
     if (r) {
         r->v1 = v1;
         r->v2 = v2;
+        strncpy(r->label, label, sizeof(r->label));
         r->type = UNSET;
     }
     return r;
@@ -127,9 +131,8 @@ vertex ** adjacentVertices(graph *g, vertex *v) {
 }
 
 edge ** incidentEdges(graph *g, vertex *v) {
-    edge **r = malloc((g->numEdges + 1) * sizeof (edge *));
+    edge **r = (edge **)malloc((g->numEdges + 1) * sizeof (edge *));
     if (r) {
-        edge *temp = NULL;
         int i = 0, j = 0;
         for (i = 0; i < g->numEdges; i++) {
             if (opposite(g->edges[i], v)) {
@@ -148,17 +151,15 @@ void unVisitGraph(graph *g) {
     while (*v) {
         (*v++)->status = NOT_VISITED;
     }
-    free(t);
 
     edge **e = edges(g);
     edge **u = e;
     while (*e) {
         (*e++)->type = UNSET;
     }
-    free(u);
 }
 
-treeNode * createNode(char key, int level, int childrenListSize) {
+treeNode * createTreeNode(char key, int childrenListSize) {
     treeNode *r = (treeNode *) malloc(sizeof (treeNode));
     if (r) {
         r->children = (treeNode **) malloc(childrenListSize * sizeof (treeNode *));
@@ -166,7 +167,6 @@ treeNode * createNode(char key, int level, int childrenListSize) {
             r->childrenListSize = childrenListSize;
             r->childrenNum = 0;
             r->key = key;
-            r->level = level;
         } else {
             free(r);
         }
@@ -175,7 +175,7 @@ treeNode * createNode(char key, int level, int childrenListSize) {
 
 }
 
-int addChildren(treeNode *n, treeNode *child) {
+int addChild(treeNode *n, treeNode *child) {
     int r = 0;
     if (n->childrenNum < n->childrenListSize) {
         n->children[n->childrenNum++] = child;
@@ -184,7 +184,7 @@ int addChildren(treeNode *n, treeNode *child) {
         if (temp) {
             n->children = temp;
             n->childrenListSize *= 2;
-            r = addChildren(n, child);
+            r = addChild(n, child);
         } else {
             fprintf(stderr, "Unable to enlarge children list");
             r = -1;
@@ -193,9 +193,10 @@ int addChildren(treeNode *n, treeNode *child) {
     return r;
 }
 
-treeNode * DFS(graph *g, vertex *v, int level) {
+treeNode * DFS(graph *g, vertex *v) {
     printf("%c ", v->key);
-    treeNode *r = createNode(v->key, level, 8);
+    v->status = VISITED;
+    treeNode *r = createTreeNode(v->key, 8);
     if (r) {
         edge **ie = incidentEdges(g, v);
         while (*ie) {
@@ -209,8 +210,7 @@ treeNode * DFS(graph *g, vertex *v, int level) {
                             break;
                         case NOT_VISITED:
                             (*ie)->type = DISCOVERY;
-                            o->status = VISITED;
-                            addChildren(r, DFS(g, o, level+1));
+                            addChild(r, DFS(g, o));
                             break;
                         default:
                             fprintf(stderr, "Unexpected vertex status %d", o->status);
@@ -230,10 +230,66 @@ treeNode * DFS(graph *g, vertex *v, int level) {
     return r;
 }
 
-void TreeDFSPrint(treeNode *n) {
-    printf("%c (%d); ", n->key, n->level);
-    int i=0;
-    for(i=0; i<n->childrenNum; i++) {
-        TreeDFSPrint(n->children[i]);
+treeNode * BFS(graph *g, vertex *v) {
+    queue *q = createQueue(16);
+    treeNode *root = NULL;
+    if (q) {
+        queueElement *current = NULL;
+        edge **ie = NULL;
+        vertex *o = NULL;
+        treeNode *n = NULL;
+        enqueue(q, createQueueElement(v, NULL));
+        v->status = VISITED;
+        while (!queueIsEmpty(q)) {
+            current = dequeue(q);
+            n = createTreeNode(current->v->key, 8);
+            if (current->parent) {
+                addChild(current->parent, n);
+            }
+            else {
+                root = n;
+            }
+            ie = incidentEdges(g, current->v);
+            while (*ie) {
+                switch ((*ie)->type) {
+                    case UNSET:
+                        o = opposite(*ie, current->v);
+                        switch (o->status) {
+                            case VISITED:
+                                (*ie)->type = CROSS;
+                                break;
+                            case NOT_VISITED:
+                                (*ie)->type = DISCOVERY;
+                                enqueue(q, createQueueElement(o, n));
+                                o->status = VISITED;
+                                break;
+                            default:
+                                fprintf(stderr, "Unexpected vertex status %d", o->status);
+                                return NULL;
+                        }
+                        break;
+                    case DISCOVERY:
+                    case CROSS:
+                        break;
+                    default:
+                        fprintf(stderr, "Unexpected edge type %d", (*ie)->type);
+                        return NULL;
+                }
+                ie++;
+            }
+        }
+    } else {
+        free(root);
+        root = NULL;
+    }
+
+    return root;
+}
+
+void TreeDFSPrint(treeNode *n, int level) {
+    printf("%c (%d); ", n->key, level);
+    int i = 0;
+    for (i = 0; i < n->childrenNum; i++) {
+        TreeDFSPrint(n->children[i], level + 1);
     }
 }

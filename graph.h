@@ -27,6 +27,7 @@ extern "C" {
     struct s_edge {
         vertex *v1;
         vertex *v2;
+        char label[10];
         enum e_type type;
     };
 
@@ -44,7 +45,7 @@ extern "C" {
     typedef struct s_graph graph;
 
     vertex * createVertex(char key);
-    edge * createEdge(vertex *v1, vertex *v2);
+    edge * createEdge(vertex *v1, vertex *v2, char label[]);
     graph * createGraph(int vertexListSize, int edgeListSize);
 
     int addVertex(graph *g, vertex *v);
@@ -75,13 +76,17 @@ extern "C" {
 
     typedef struct s_treeNode treeNode;
 
-    treeNode * createNode(char key, int level, int childrenListSize);
-    int addChildren(treeNode *n, treeNode *child);
+    treeNode * createTreeNode(char key, int childrenListSize);
+    int addChild(treeNode *n, treeNode *child);
 
     //---------------------------------------------------------------
+    
+    
+    // --------------------------------------------
 
-    treeNode * DFS(graph *g, vertex *v, int level);
-    void TreeDFSPrint(treeNode *n);
+    treeNode * DFS(graph *g, vertex *v);
+    treeNode * BFS(graph *g, vertex *v);
+    void TreeDFSPrint(treeNode *n, int level);
 
 #ifdef __cplusplus
 }
