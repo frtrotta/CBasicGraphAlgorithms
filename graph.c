@@ -53,7 +53,7 @@ int addVertex(graph *g, vertex *v) {
     if (g->numVertices < g->vertexListSize) {
         g->vertices[g->numVertices++] = v;
     } else {
-        vertex **temp = (vertex **)realloc(g->vertices, 2 * g->vertexListSize * sizeof (vertex *));
+        vertex **temp = (vertex **) realloc(g->vertices, 2 * g->vertexListSize * sizeof (vertex *));
         if (temp) {
             g->vertices = temp;
             g->vertexListSize *= 2;
@@ -71,7 +71,7 @@ int addEdge(graph *g, edge *e) {
     if (g->numEdges < g->edgeListSize) {
         g->edges[g->numEdges++] = e;
     } else {
-        edge **temp = (edge **)realloc(g->edges, 2 * g->edgeListSize * sizeof (edge *));
+        edge **temp = (edge **) realloc(g->edges, 2 * g->edgeListSize * sizeof (edge *));
         if (temp) {
             g->edges = temp;
             g->edgeListSize *= 2;
@@ -111,7 +111,7 @@ vertex * opposite(edge *e, vertex *v) {
 }
 
 vertex ** adjacentVertices(graph *g, vertex *v) {
-    vertex **r = (vertex **)malloc((g->numVertices+1) * sizeof (vertex *));
+    vertex **r = (vertex **) malloc((g->numVertices + 1) * sizeof (vertex *));
     if (r) {
         vertex *temp = NULL;
         int i = 0, j = 0;
@@ -127,7 +127,7 @@ vertex ** adjacentVertices(graph *g, vertex *v) {
 }
 
 edge ** incidentEdges(graph *g, vertex *v) {
-    edge **r = malloc((g->numEdges+1) * sizeof (edge *));
+    edge **r = malloc((g->numEdges + 1) * sizeof (edge *));
     if (r) {
         edge *temp = NULL;
         int i = 0, j = 0;
@@ -145,49 +145,94 @@ edge ** incidentEdges(graph *g, vertex *v) {
 void unVisitGraph(graph *g) {
     vertex **v = vertices(g);
     vertex **t = v;
-    while(*v) {
+    while (*v) {
         (*v++)->status = NOT_VISITED;
     }
     free(t);
-    
+
     edge **e = edges(g);
     edge **u = e;
-    while(*e) {
+    while (*e) {
         (*e++)->type = UNSET;
     }
     free(u);
 }
 
-int DFS(graph *g, vertex *v) {
-    printf("%c\n", v->key);
-    edge **ie = incidentEdges(g, v);
-    while(*ie) {
-        vertex *o = NULL;
-        switch((*ie)->type) {
-            case UNSET:
-                o = opposite(*ie, v);
-                switch(o->status) {
-                    case VISITED:
-                        (*ie)->type = BACK;
-                        break;
-                    case NOT_VISITED:
-                        (*ie)->type = DISCOVERY;
-                        o->status = VISITED;
-                        DFS(g, o);
-                        break;
-                    default:
-                        fprintf(stderr, "Unexpected vertex status %d", o->status);
-                        return -1;
-                }
-                break;
-            case DISCOVERY:
-            case BACK:
-                break;
-            default:
-                fprintf(stderr, "Unexpected edge type %d", (*ie)->type);
-                return -2;
+treeNode * createNode(char key, int childrenListSize) {
+    treeNode *r = (treeNode *) malloc(sizeof (treeNode));
+    if (r) {
+        r->children = (treeNode **) malloc(childrenListSize * sizeof (treeNode *));
+        if (r->children) {
+            r->childrenListSize = childrenListSize;
+            r->childrenNum = 0;
+            r->key = key;
+        } else {
+            free(r);
         }
-        ie++;
     }
-        return 0;
+    return r;
+
+}
+
+int addChildren(treeNode *n, treeNode *child) {
+    int r = 0;
+    if (n->childrenNum < n->childrenListSize) {
+        n->children[n->childrenNum++] = child;
+    } else {
+        treeNode **temp = realloc(n->children, 2 * n->childrenListSize);
+        if (temp) {
+            n->children = temp;
+            n->childrenListSize *= 2;
+            r = addChildren(n, child);
+        } else {
+            fprintf(stderr, "Unable to enlarge children list");
+            r = -1;
+        }
+    }
+    return r;
+}
+
+treeNode * DFS(graph *g, vertex *v) {
+    printf("%c ", v->key);
+    treeNode *r = createNode(v->key, 8);
+    if (r) {
+        edge **ie = incidentEdges(g, v);
+        while (*ie) {
+            vertex *o = NULL;
+            switch ((*ie)->type) {
+                case UNSET:
+                    o = opposite(*ie, v);
+                    switch (o->status) {
+                        case VISITED:
+                            (*ie)->type = BACK;
+                            break;
+                        case NOT_VISITED:
+                            (*ie)->type = DISCOVERY;
+                            o->status = VISITED;
+                            addChildren(r, DFS(g, o));
+                            break;
+                        default:
+                            fprintf(stderr, "Unexpected vertex status %d", o->status);
+                            return -1;
+                    }
+                    break;
+                case DISCOVERY:
+                case BACK:
+                    break;
+                default:
+                    fprintf(stderr, "Unexpected edge type %d", (*ie)->type);
+                    return -2;
+            }
+            ie++;
+        }
+    }
+    return r;
+}
+
+void DFStree(treeNode *n) {
+    printf("%c ", n->key);
+    int i=0;
+    for(i=0; i<n->childrenNum; i++) {
+        DFStree(n->children[i]);
+    }
 }
